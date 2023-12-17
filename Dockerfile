@@ -7,8 +7,8 @@ USER root
 
 # Install nodejs, npm, deno, typescript
 RUN pacman -Syu --noconfirm nodejs npm deno &&\
-    pacman -Qtdq | xargs -r sudo pacman --noconfirm -Rcns &&\
-    npm install -g typescript &&\
+    pacman -Qtdq | xargs -r pacman --noconfirm -Rcns &&\
+    npm install -g typescript
 
 USER u1and0
 
