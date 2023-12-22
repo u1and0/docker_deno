@@ -1,36 +1,28 @@
 # Usage:
 # docker run -it --rm -v `pwd`:/work -w /work u1and0/deno
 
-FROM u1and0/zplug:latest
+FROM u1and0/zplug:arm64
 
-# Install nodejs, npm, deno
+# Install nodejs, npm
 USER root
+RUN pacman -Syu --noconfirm nodejs npm jq unzip &&\
+    : "pacman -Scc の代わり" &&\
+    pacman -Qtdq | xargs -r pacman --noconfirm -Rcns
 
-ARG TARGETPLATFORM
-
-RUN PLATFORM=$( \
-        case ${TARGETPLATFORM} in \
-            linux/amd64 \) echo "x86_64";; \
-            linux/arm64 \) echo "aarch_64";; \
-        esac ) && \
-    if [ ${PLATFORM} = "amd64" ]; then \
-        pacman -Syu --noconfirm nodejs npm deno &&\
-        pacman -Qtdq | xargs -r sudo pacman --noconfirm -Rcns &&\
-        : "pacman -Scc の代わり"\
-    elif [ ${PLATFORM} = "arm64" ]; then \
-        pacman -Syu --noconfirm nodejs npm &&\
-        pacman -Qtdq | xargs -r sudo pacman --noconfirm -Rcns &&\
-        : "pacman -Scc の代わり" &&\
-        mkdir /tmp/deno && cd /tmp/deno &&\
-        curl -fsSLo https://github.com/LukeChannings/deno-arm64/releases/download/v1.37.1/deno-linux-arm64.zip &&\
-        unzip deno-linux-arm64.zip &&\
-        rm deno-linux-arm64.zip\
-    fi
-
+# Intall deno binary
+WORKDIR /tmp/deno
+RUN DENO_LATEST_TAG=$(curl -s https://api.github.com/repos/LukeChannings/deno-arm64/tags | jq -r '.[0].name') &&\
+    echo ${DENO_LATEST_TAG} &&\
+    curl -fsSLo deno-linux-arm64.zip https://github.com/LukeChannings/deno-arm64/releases/download/${DENO_LATEST_TAG}/deno-linux-arm64.zip &&\
+    unzip deno-linux-arm64.zip &&\
+    mv ./deno /usr/bin/ &&\
+    rm deno-linux-arm64.zip
 
 # Install typescript
 RUN npm install -g typescript
 
+USER u1and0
+WORKDIR /home/u1and0
 LABEL maintainer="u1and0 <e01.ando60@gmail.com>"\
-      description="deno / typescript env with neovim"\
-      version="deno:v0.1.0"
+  description="deno / typescript env with neovim"\
+  version="deno:v0.2.0"
